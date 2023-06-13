@@ -15,6 +15,11 @@ import (
 type opts struct {
 	domain      string
 	origin      string
+	ignoreTTL   bool
+	ignore      []string
+	found       bool
+	notfound    bool
+	strict      bool
 	destination string
 }
 
@@ -107,6 +112,9 @@ func loadMap(filename string, options opts) zoneMap {
 	z = dns.NewZoneParser(fd, options.domain, "")
 	fatalOnErr(z.Err())
 	for rr, ok := z.Next(); ok; rr, ok = z.Next() {
+		if options.ignoreTTL {
+			rr.Header().Ttl = 3600
+		}
 		rrSlice = append(rrSlice, rr)
 	}
 
@@ -220,36 +228,47 @@ func flattenDnsEntrySlice(entry []dnsEntry) string {
 	return flat
 }
 
+func logReport(jreport map[string]map[string][]jzoneDiff, reportType string, name string, dnsType string, origin []dnsEntry, destination []dnsEntry, options opts) {
+	if jreport[name][dnsType] == nil {
+		jreport[name] = make(map[string][]jzoneDiff)
+	}
+
+	switch reportType {
+	case "notfound":
+		jreport[name][dnsType] = logAndReport(reportType, name, dnsType, origin, []dnsEntry{}, options)
+	case "different", "found":
+		jreport[name][dnsType] = logAndReport(reportType, name, dnsType, origin, destination, options)
+	default:
+		log.Fatalln("We shouldn't reach this point")
+	}
+}
 func zoneCompare(origin, destination zoneMap, options opts) string {
 	jreport := make(rrMapJzone)
+
+	ignore := make(map[string]struct{}, len(options.ignore))
+	for _, i := range options.ignore {
+		ignore[strings.ToLower(i)] = struct{}{}
+	}
 	for name, dnsTypes := range origin {
 		for dnsType, _ := range dnsTypes {
-			if jreport[name][dnsType] == nil {
-				jreport[name] = make(map[string][]jzoneDiff)
-			}
-
-			if destination[name][dnsType] == nil {
-				jreport[name][dnsType] = logAndReport("notfound", name,
-					dnsType,
-					origin[name][dnsType],
-					[]dnsEntry{},
-					options)
+			if _, found := ignore[strings.ToLower(dnsType)]; found {
 				continue
 			}
-			sortDNSSlice(origin[name][dnsType])
-			sortDNSSlice(destination[name][dnsType])
+			if destination[name][dnsType] == nil && options.notfound {
+				logReport(jreport, "notfound", name, dnsType, origin[name][dnsType],
+					destination[name][dnsType], options)
+				continue
+			}
+			if !options.strict {
+				sortDNSSlice(origin[name][dnsType])
+				sortDNSSlice(destination[name][dnsType])
+			}
 			if !reflect.DeepEqual(destination[name][dnsType], origin[name][dnsType]) {
-				jreport[name][dnsType] = logAndReport("different", name,
-					dnsType,
-					origin[name][dnsType],
-					destination[name][dnsType],
-					options)
-			} else {
-				jreport[name][dnsType] = logAndReport("found", name,
-					dnsType,
-					origin[name][dnsType],
-					destination[name][dnsType],
-					options)
+				logReport(jreport, "different", name, dnsType, origin[name][dnsType],
+					destination[name][dnsType], options)
+			} else if options.found {
+				logReport(jreport, "found", name, dnsType, origin[name][dnsType],
+					destination[name][dnsType], options)
 			}
 		}
 	}
@@ -260,17 +279,47 @@ func zoneCompare(origin, destination zoneMap, options opts) string {
 }
 
 func main() {
-	// TODO: use urfave flags
-	// var options = opts{domain: "example.com"}
 	options := opts{}
 	app := &cli.App{
 		Name:  "zonecompare",
 		Usage: "compare dns zones",
 		Flags: []cli.Flag{
+			&cli.BoolFlag{
+				Name:        "ignorettl",
+				Value:       false,
+				Aliases:     []string{"t"},
+				Usage:       "Force TTL value to 604800 in both zones",
+				Destination: &options.ignoreTTL,
+			},
 			&cli.StringFlag{
 				Name:        "domain",
 				Usage:       "domain to compare, default none",
 				Destination: &options.domain,
+			},
+			&cli.BoolFlag{
+				Name:        "showfound",
+				Aliases:     []string{"f"},
+				Value:       false,
+				Usage:       "Report on found records",
+				Destination: &options.found,
+			},
+			&cli.BoolFlag{
+				Name:        "skipnotfound",
+				Aliases:     []string{"n"},
+				Usage:       "Skip not found records",
+				Destination: &options.notfound,
+			},
+			&cli.BoolFlag{
+				Name:        "strict",
+				Value:       false,
+				Aliases:     []string{"s"},
+				Usage:       "Consider the different order of the same record a difference",
+				Destination: &options.strict,
+			},
+			&cli.StringSliceFlag{
+				Name:    "ignore",
+				Aliases: []string{"i"},
+				Usage:   "Ignore <value> type records",
 			},
 		},
 		Action: func(c *cli.Context) error {
