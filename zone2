@@ -1,0 +1,55 @@
+$TTL 3600
+@       IN      SOA     ns1.example.com. admin.example.com. (
+                            2023061201      ; Serial number
+                            3600            ; Refresh
+                            1800            ; Retry
+                            604800          ; Expire
+                            86400           ; Minimum TTL
+                            )
+
+        IN      NS      ns1.example.com.
+        IN      NS      ns2.example.com.
+
+        IN      MX      10      mail.example.com.
+        IN      MX      20      backup-mail.example.com.
+
+        IN      A       192.0.2.1
+        IN      AAAA    2001:db8::1
+
+        IN      TXT     "Welcome to Example.com"
+        IN      SPF     "v=spf1 mx -all"
+        IN      CAA     0 issue "letsencrypt.org"
+
+        IN      SRV     10 20 389 directory.example.com.
+        IN      NAPTR   10 100 "u" "E2U+sip" "!^.*$!sip:customer-service@example.com!" .
+
+ns1     IN      A       192.0.2.2
+ns2     IN      A       192.0.2.3
+
+www     IN      CNAME   example.com.
+
+mail    IN      A       192.0.2.4
+
+ftp     IN      CNAME   example.com.
+
+subdomain   IN  A       192.0.2.5
+
+subdomain2  IN  A       192.0.2.6
+
+subdomain3  IN  A       192.0.2.7
+            IN  TXT     "This is a text record for subdomain3"
+
+subdomain4  IN  A       192.0.2.8
+            IN  MX      10      mail.subdomain4.example.com.
+            IN  MX      20      backup-mail.subdomain4.example.com.
+
+mail.subdomain4   IN  A       192.0.2.9
+
+backup-mail.subdomain4   IN  A   192.0.2.10
+
+subdomain5  IN  NS      ns3.subdomain5.example.com.
+            IN  NS      ns4.subdomain5.example.com.
+
+ns3.subdomain5      IN  A       192.0.2.11
+ns4.subdomain5      IN  A       192.0.2.12
+

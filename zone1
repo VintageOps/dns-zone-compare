@@ -1,0 +1,28 @@
+$TTL 3600
+@       IN      SOA     ns1.example.com. admin.example.com. (
+                            2023061201      ; Serial number
+                            3600            ; Refresh
+                            1800            ; Retry
+                            604800          ; Expire
+                            86400           ; Minimum TTL
+                            )
+
+        IN      NS      ns1.example.com.
+        IN      NS      ns2.example.com.
+
+        IN      MX      10      mail.example.com.
+
+        IN      A       192.0.2.1
+
+ns1     IN      A       192.0.2.2
+ns2     IN      A       192.0.2.3
+
+www     IN      CNAME   example.com.
+
+mail    IN      A       192.0.2.4
+mail    IN      A       192.0.2.6
+mail    IN      A       192.0.2.7
+
+ftp     IN      CNAME   example.com.
+
+subdomain   IN  A       192.0.2.5
