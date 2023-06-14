@@ -203,7 +203,7 @@ func deepSliceAndSort(records []dnsEntry) []string {
 	return stringSliced
 }
 
-func findRepeat(slice []string, hdr string) string {
+func findRepeat(slice []string) string {
 	var output []string
 	var outputStr string
 	check := make(map[string]struct{})
@@ -232,6 +232,23 @@ func sliceStringDiff(a, b []string) []string {
 		}
 	}
 	return diff
+}
+
+func findSliceRepeats(slice []string) string {
+	var output []string
+	var outputStr string
+	check := make(map[string]struct{})
+	for _, entry := range slice {
+		if _, found := check[entry]; !found {
+			check[entry] = struct{}{}
+		} else {
+			output = append(output, entry)
+		}
+	}
+	if len(output) > 0 {
+		outputStr = strings.Join(output, " ")
+	}
+	return outputStr
 }
 
 func logAndReport(status string,
@@ -263,10 +280,13 @@ func logAndReport(status string,
 				options.destination: sliceStringDestination}
 			if _, found := deep[strings.ToLower(curType)]; found {
 				_differences := make(map[string]string)
+				_repeats := make(map[string]string)
 				originSlice := deepSliceAndSort(entrySliceOrigin)
 				destinationSlice := deepSliceAndSort(entrySliceDestination)
 				oriDestSlice := sliceStringDiff(originSlice, destinationSlice)
 				destOriSlice := sliceStringDiff(destinationSlice, originSlice)
+				oriRepeats := findRepeat(originSlice)
+				destRepeats := findRepeat(destinationSlice)
 				if len(oriDestSlice) > 0 {
 					_differences[options.origin] = removeTabs(entrySliceOrigin[0].Hdr.String()) + strings.Join(oriDestSlice, " ")
 					log.Println(options.origin, status, removeTabs(entrySliceOrigin[0].Hdr.String())+strings.Join(oriDestSlice, " "))
@@ -277,6 +297,15 @@ func logAndReport(status string,
 				}
 				if len(_differences) > 0 {
 					_jzoneDiff["differences"] = _differences
+				}
+				if len(oriRepeats) > 0 {
+					_repeats[options.origin] = removeTabs(entrySliceDestination[0].Hdr.String()) + oriRepeats
+				}
+				if len(destRepeats) > 0 {
+					_repeats[options.destination] = removeTabs(entrySliceDestination[0].Hdr.String()) + destRepeats
+				}
+				if len(_repeats) > 0 {
+					_jzoneDiff["repeats"] = _repeats
 				}
 				if len(destOriSlice) == 0 && len(oriDestSlice) == 0 {
 					// there's a repetition or the entries are "deeply" the same
