@@ -18,6 +18,7 @@ type opts struct {
 	ignoreTTL   bool
 	ignore      []string
 	deep        []string
+	deepAll     bool
 	found       bool
 	notfound    bool
 	strict      bool
@@ -257,7 +258,6 @@ func logAndReport(status string,
 	entrySliceOrigin []dnsEntry,
 	entrySliceDestination []dnsEntry,
 	options opts) []jzoneDiff {
-	// TODO: deep diff
 	var deep = make(map[string]struct{}, len(options.deep))
 	var sliceStringOrigin, sliceStringDestination []string
 	var jzoneDiffSlice []jzoneDiff
@@ -278,7 +278,7 @@ func logAndReport(status string,
 			_jzoneDiff := jzoneDiff{"status": status,
 				options.origin:      sliceStringOrigin,
 				options.destination: sliceStringDestination}
-			if _, found := deep[strings.ToLower(curType)]; found {
+			if _, found := deep[strings.ToLower(curType)]; found || options.deepAll {
 				_differences := make(map[string]string)
 				_repeats := make(map[string]string)
 				originSlice := deepSliceAndSort(entrySliceOrigin)
@@ -460,6 +460,13 @@ func main() {
 				Name:    "deep",
 				Aliases: []string{"d"},
 				Usage:   "Inspect <value> type records by merging, then splitting and sorting the content",
+			},
+			&cli.BoolFlag{
+				Name:        "deepAll",
+				Value:       false,
+				Aliases:     []string{"da"},
+				Usage:       "Inspect all type records by merging, then splitting and sorting the content",
+				Destination: &options.deepAll,
 			},
 		},
 		Action: func(c *cli.Context) error {
