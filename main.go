@@ -269,15 +269,18 @@ func logAndReport(status string,
 				destOriSlice := sliceStringDiff(destinationSlice, originSlice)
 				if len(oriDestSlice) > 0 {
 					_differences[options.origin] = removeTabs(entrySliceOrigin[0].Hdr.String()) + strings.Join(oriDestSlice, " ")
+					log.Println(options.origin, status, removeTabs(entrySliceOrigin[0].Hdr.String())+strings.Join(oriDestSlice, " "))
 				}
 				if len(destOriSlice) > 0 {
 					_differences[options.destination] = removeTabs(entrySliceDestination[0].Hdr.String()) + strings.Join(destOriSlice, " ")
+					log.Println(options.destination, status, removeTabs(entrySliceDestination[0].Hdr.String())+strings.Join(destOriSlice, " "))
 				}
 				if len(_differences) > 0 {
 					_jzoneDiff["differences"] = _differences
 				}
 				if len(destOriSlice) == 0 && len(oriDestSlice) == 0 {
 					// there's a repetition or the entries are "deeply" the same
+					// TODO: report repeats
 					// if they are the same, change it as found (or don't add it if found reporting is disabled)
 					if options.found {
 						_jzoneDiff["status"] = "found"
@@ -327,6 +330,7 @@ func logReport(jreport map[string]map[string][]jzoneDiff, reportType string, nam
 		if (reportType == "different" && len(_logAndReport) > 0) || reportType == "found" {
 			jreport[name][dnsType] = _logAndReport
 		}
+		// this happens when they are "different" but after deep inspection they are the same.
 		if len(jreport[name][dnsType]) == 0 {
 			delete(jreport[name], dnsType)
 		}
@@ -352,7 +356,7 @@ func zoneCompare(origin, destination zoneMap, options opts) string {
 			}
 			if destination[name][dnsType] == nil {
 
-				if options.notfound {
+				if !options.notfound {
 					logReport(jreport, "notfound", name, dnsType, origin[name][dnsType],
 						destination[name][dnsType], options)
 				}
@@ -405,6 +409,7 @@ func main() {
 			&cli.BoolFlag{
 				Name:        "skipnotfound",
 				Aliases:     []string{"n"},
+				Value:       false,
 				Usage:       "Skip not found records",
 				Destination: &options.notfound,
 			},
