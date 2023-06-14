@@ -311,7 +311,6 @@ func logAndReport(status string,
 				}
 				if len(destOriSlice) == 0 && len(oriDestSlice) == 0 {
 					// there's a repetition or the entries are "deeply" the same
-					// TODO: report repeats
 					// if they are the same, change it as found (or don't add it if found reporting is disabled)
 					if options.found || len(_repeats) == 0 {
 						_jzoneDiff["status"] = "found"
@@ -413,6 +412,7 @@ func zoneCompare(origin, destination zoneMap, options opts) string {
 }
 
 func main() {
+	// TODO: add json or text only outputs
 	options := opts{}
 	app := &cli.App{
 		Name:  "zonecompare",
