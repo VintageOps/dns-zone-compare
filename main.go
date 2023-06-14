@@ -279,8 +279,8 @@ func logAndReport(status string,
 				options.origin:      sliceStringOrigin,
 				options.destination: sliceStringDestination}
 			if _, found := deep[strings.ToLower(curType)]; found || options.deepAll {
-				_differences := make(map[string]string)
-				_repeats := make(map[string]string)
+				_differences := make(map[string][]string)
+				_repeats := make(map[string][]string)
 				originSlice := deepSliceAndSort(entrySliceOrigin)
 				destinationSlice := deepSliceAndSort(entrySliceDestination)
 				oriDestSlice := sliceStringDiff(originSlice, destinationSlice)
@@ -288,22 +288,22 @@ func logAndReport(status string,
 				oriRepeats := findRepeat(originSlice)
 				destRepeats := findRepeat(destinationSlice)
 				if len(oriDestSlice) > 0 {
-					_differences[options.origin] = removeTabs(entrySliceOrigin[0].Hdr.String()) + strings.Join(oriDestSlice, " ")
+					_differences[options.origin] = []string{removeTabs(entrySliceOrigin[0].Hdr.String()) + strings.Join(oriDestSlice, " ")}
 					log.Println(options.origin, status, removeTabs(entrySliceOrigin[0].Hdr.String())+strings.Join(oriDestSlice, " "))
 				}
 				if len(destOriSlice) > 0 {
-					_differences[options.destination] = removeTabs(entrySliceDestination[0].Hdr.String()) + strings.Join(destOriSlice, " ")
+					_differences[options.destination] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + strings.Join(destOriSlice, " ")}
 					log.Println(options.destination, status, removeTabs(entrySliceDestination[0].Hdr.String())+strings.Join(destOriSlice, " "))
 				}
 				if len(_differences) > 0 {
 					_jzoneDiff["differences"] = _differences
 				}
 				if len(oriRepeats) > 0 {
-					_repeats[options.origin] = removeTabs(entrySliceDestination[0].Hdr.String()) + oriRepeats
+					_repeats[options.origin] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + oriRepeats}
 					log.Println(options.origin, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+oriRepeats)
 				}
 				if len(destRepeats) > 0 {
-					_repeats[options.destination] = removeTabs(entrySliceDestination[0].Hdr.String()) + destRepeats
+					_repeats[options.destination] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + destRepeats}
 					log.Println(options.destination, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+destRepeats)
 				}
 				if len(_repeats) > 0 {
