@@ -17,6 +17,7 @@ type opts struct {
 	origin      string
 	ignoreTTL   bool
 	ignore      []string
+	deep        []string
 	found       bool
 	notfound    bool
 	strict      bool
@@ -106,7 +107,10 @@ func loadMap(filename string, options opts) zoneMap {
 	fd, err = os.Open(filename)
 	fatalOnErr(err)
 	defer func() {
-		fd.Close()
+		err := fd.Close()
+		if err != nil {
+			return
+		}
 	}()
 
 	z = dns.NewZoneParser(fd, options.domain, "")
@@ -133,7 +137,7 @@ func loadMap(filename string, options opts) zoneMap {
 
 }
 
-// DNS entry Slice sorter, for proper comparision
+// DNS entry Slice sorter, for proper comparison
 func sortDNSSlice(x []dnsEntry) {
 	if len(x) > 1 {
 		sort.Slice(x, func(i, j int) bool { return x[i].String() < x[j].String() })
@@ -190,6 +194,46 @@ func sliceDnsEntryString(x []dnsEntry) []string {
 	return returnSlice
 }
 
+func deepSliceAndSort(records []dnsEntry) []string {
+	var stringSliced []string
+	for _, split := range records {
+		stringSliced = append(stringSliced, strings.Fields(split.content)...)
+	}
+	sort.Strings(stringSliced)
+	return stringSliced
+}
+
+func findRepeat(slice []string, hdr string) string {
+	var output []string
+	var outputStr string
+	check := make(map[string]struct{})
+	for _, entry := range slice {
+		if _, found := check[entry]; !found {
+			check[entry] = struct{}{}
+		} else {
+			output = append(output, entry)
+		}
+	}
+	if len(output) > 0 {
+		outputStr = strings.Join(output, " ")
+	}
+	return outputStr
+}
+
+func sliceStringDiff(a, b []string) []string {
+	mb := make(map[string]struct{}, len(b))
+	for _, x := range b {
+		mb[x] = struct{}{}
+	}
+	var diff []string
+	for _, x := range a {
+		if _, found := mb[x]; !found {
+			diff = append(diff, x)
+		}
+	}
+	return diff
+}
+
 func logAndReport(status string,
 	name string,
 	curType string,
@@ -197,8 +241,13 @@ func logAndReport(status string,
 	entrySliceDestination []dnsEntry,
 	options opts) []jzoneDiff {
 	// TODO: deep diff
+	var deep = make(map[string]struct{}, len(options.deep))
 	var sliceStringOrigin, sliceStringDestination []string
 	var jzoneDiffSlice []jzoneDiff
+
+	for _, i := range options.deep {
+		deep[strings.ToLower(i)] = struct{}{}
+	}
 	sliceStringOrigin = sliceDnsEntryString(entrySliceOrigin)
 	sliceStringDestination = sliceDnsEntryString(entrySliceDestination)
 	switch status {
@@ -209,11 +258,48 @@ func logAndReport(status string,
 		}
 	case "different":
 		{
-			diffEntries := diffDnsEntries(entrySliceOrigin, entrySliceDestination, options)
-			jzoneDiffSlice = append(jzoneDiffSlice, jzoneDiff{"status": status,
+			_jzoneDiff := jzoneDiff{"status": status,
 				options.origin:      sliceStringOrigin,
-				options.destination: sliceStringDestination,
-				"differences":       diffEntries})
+				options.destination: sliceStringDestination}
+			if _, found := deep[strings.ToLower(curType)]; found {
+				_differences := make(map[string]string)
+				originSlice := deepSliceAndSort(entrySliceOrigin)
+				destinationSlice := deepSliceAndSort(entrySliceDestination)
+				oriDestSlice := sliceStringDiff(originSlice, destinationSlice)
+				destOriSlice := sliceStringDiff(destinationSlice, originSlice)
+				if len(oriDestSlice) > 0 {
+					_differences[options.origin] = removeTabs(entrySliceOrigin[0].Hdr.String()) + strings.Join(oriDestSlice, " ")
+				}
+				if len(destOriSlice) > 0 {
+					_differences[options.destination] = removeTabs(entrySliceDestination[0].Hdr.String()) + strings.Join(destOriSlice, " ")
+				}
+				if len(_differences) > 0 {
+					_jzoneDiff["differences"] = _differences
+				}
+				if len(destOriSlice) == 0 && len(oriDestSlice) == 0 {
+					// there's a repetition or the entries are "deeply" the same
+					// if they are the same, change it as found (or don't add it if found reporting is disabled)
+					if options.found {
+						_jzoneDiff["status"] = "found"
+						delete(_jzoneDiff, options.destination)
+					} else {
+						_jzoneDiff = jzoneDiff{}
+					}
+				}
+
+			} else {
+
+				diffEntries := diffDnsEntries(entrySliceOrigin, entrySliceDestination, options)
+				// this happens when strict and the order is different
+				if len(diffEntries) > 0 {
+					_jzoneDiff["differences"] = diffEntries
+				} else {
+					_jzoneDiff["differences"] = []string{"Wrong Order"}
+				}
+			}
+			if len(_jzoneDiff) > 0 {
+				jzoneDiffSlice = append(jzoneDiffSlice, _jzoneDiff)
+			}
 		}
 	}
 
@@ -237,26 +323,39 @@ func logReport(jreport map[string]map[string][]jzoneDiff, reportType string, nam
 	case "notfound":
 		jreport[name][dnsType] = logAndReport(reportType, name, dnsType, origin, []dnsEntry{}, options)
 	case "different", "found":
-		jreport[name][dnsType] = logAndReport(reportType, name, dnsType, origin, destination, options)
+		_logAndReport := logAndReport(reportType, name, dnsType, origin, destination, options)
+		if (reportType == "different" && len(_logAndReport) > 0) || reportType == "found" {
+			jreport[name][dnsType] = _logAndReport
+		}
+		if len(jreport[name][dnsType]) == 0 {
+			delete(jreport[name], dnsType)
+		}
+		if len(jreport[name]) == 0 {
+			delete(jreport, name)
+		}
 	default:
 		log.Fatalln("We shouldn't reach this point")
 	}
 }
 func zoneCompare(origin, destination zoneMap, options opts) string {
-	jreport := make(rrMapJzone)
+	var jreport = make(rrMapJzone)
+	var ignore = make(map[string]struct{}, len(options.ignore))
 
-	ignore := make(map[string]struct{}, len(options.ignore))
 	for _, i := range options.ignore {
 		ignore[strings.ToLower(i)] = struct{}{}
 	}
 	for name, dnsTypes := range origin {
 		for dnsType, _ := range dnsTypes {
+
 			if _, found := ignore[strings.ToLower(dnsType)]; found {
 				continue
 			}
-			if destination[name][dnsType] == nil && options.notfound {
-				logReport(jreport, "notfound", name, dnsType, origin[name][dnsType],
-					destination[name][dnsType], options)
+			if destination[name][dnsType] == nil {
+
+				if options.notfound {
+					logReport(jreport, "notfound", name, dnsType, origin[name][dnsType],
+						destination[name][dnsType], options)
+				}
 				continue
 			}
 			if !options.strict {
@@ -272,7 +371,7 @@ func zoneCompare(origin, destination zoneMap, options opts) string {
 			}
 		}
 	}
-	jzoneOutput, err := json.Marshal(jreport)
+	jzoneOutput, err := json.MarshalIndent(jreport, "", "  ")
 	fatalOnErr(err)
 	return string(jzoneOutput)
 
@@ -321,10 +420,17 @@ func main() {
 				Aliases: []string{"i"},
 				Usage:   "Ignore <value> type records",
 			},
+			&cli.StringSliceFlag{
+				Name:    "deep",
+				Aliases: []string{"d"},
+				Usage:   "Inspect <value> type records by merging, then splitting and sorting the content",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			options.origin = c.Args().Get(0)
 			options.destination = c.Args().Get(1)
+			options.ignore = c.StringSlice("ignore")
+			options.deep = c.StringSlice("deep")
 			origin := loadMap(options.origin, options)
 			destination := loadMap(options.destination, options)
 			fmt.Println(zoneCompare(origin, destination, options))
