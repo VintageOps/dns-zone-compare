@@ -300,9 +300,11 @@ func logAndReport(status string,
 				}
 				if len(oriRepeats) > 0 {
 					_repeats[options.origin] = removeTabs(entrySliceDestination[0].Hdr.String()) + oriRepeats
+					log.Println(options.origin, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+oriRepeats)
 				}
 				if len(destRepeats) > 0 {
 					_repeats[options.destination] = removeTabs(entrySliceDestination[0].Hdr.String()) + destRepeats
+					log.Println(options.destination, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+destRepeats)
 				}
 				if len(_repeats) > 0 {
 					_jzoneDiff["repeats"] = _repeats
@@ -311,10 +313,10 @@ func logAndReport(status string,
 					// there's a repetition or the entries are "deeply" the same
 					// TODO: report repeats
 					// if they are the same, change it as found (or don't add it if found reporting is disabled)
-					if options.found {
+					if options.found || len(_repeats) == 0 {
 						_jzoneDiff["status"] = "found"
 						delete(_jzoneDiff, options.destination)
-					} else {
+					} else if len(_repeats) == 0 {
 						_jzoneDiff = jzoneDiff{}
 					}
 				}
