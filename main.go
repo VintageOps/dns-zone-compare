@@ -105,27 +105,44 @@ func loadMap(filename string, options opts) zoneMap {
 
 	zone := make(zoneMap)
 
-	fd, err = os.Open(filename)
-	fatalOnErr(err)
-	defer func() {
-		err := fd.Close()
-		if err != nil {
-			return
-		}
-	}()
+	if strings.Contains(filename, ":") {
+		server := filename
+		transfer := new(dns.Transfer)
+		msg := new(dns.Msg)
+		msg.SetAxfr(options.domain)
 
-	z = dns.NewZoneParser(fd, options.domain, "")
-	fatalOnErr(z.Err())
-	for rr, ok := z.Next(); ok; rr, ok = z.Next() {
-		if options.ignoreTTL {
-			rr.Header().Ttl = 3600
+		axfrChan, err := transfer.In(msg, server)
+		if err != nil {
+			log.Fatalln(err.Error())
 		}
-		rrSlice = append(rrSlice, rr)
+
+		for x := range axfrChan {
+			for _, y := range x.RR {
+				rrSlice = append(rrSlice, y)
+			}
+		}
+	} else {
+		fd, err = os.Open(filename)
+		fatalOnErr(err)
+		defer func() {
+			err := fd.Close()
+			if err != nil {
+				return
+			}
+		}()
+		z = dns.NewZoneParser(fd, options.domain, "")
+		fatalOnErr(z.Err())
+		for rr, ok := z.Next(); ok; rr, ok = z.Next() {
+			rrSlice = append(rrSlice, rr)
+		}
 	}
 
 	for _, rr := range rrSlice {
 		var entry dnsEntry
 		val := reflect.ValueOf(rr).Elem()
+		if options.ignoreTTL {
+			rr.Header().Ttl = 3600
+		}
 		toDNS(val, &entry)
 		if zone[rr.Header().Name] == nil {
 			zone[rr.Header().Name] = make(map[string][]dnsEntry)
