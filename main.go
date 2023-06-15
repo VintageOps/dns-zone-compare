@@ -525,7 +525,7 @@ func main() {
 			&cli.BoolFlag{
 				Name:        "text",
 				Aliases:     []string{"x"},
-				Usage:       "Forcing addition timestamped text in output, useful only when used with --json to produce both json and text output",
+				Usage:       "Forcing timestamped text in output, useful only to produce both json and text output",
 				Destination: &options.text,
 				Value:       false,
 			},
