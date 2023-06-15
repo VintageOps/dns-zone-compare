@@ -13,16 +13,18 @@ import (
 )
 
 type opts struct {
-	domain      string
-	origin      string
-	ignoreTTL   bool
-	ignore      []string
-	deep        []string
-	deepAll     bool
-	found       bool
-	notfound    bool
-	strict      bool
-	destination string
+	domain           string
+	origin           string
+	ignoreTTL        bool
+	ignore           []string
+	deep             []string
+	deepAll          bool
+	found            bool
+	notfound         bool
+	strict           bool
+	destination      string
+	labelorigin      string
+	labeldestination string
 }
 
 type dnsEntry struct {
@@ -194,13 +196,13 @@ func diffDnsEntries(origin, destination []dnsEntry, options opts) map[string][]s
 	diffOrigin = diffDnsSlices(origin, destination)
 	diffDestination = diffDnsSlices(destination, origin)
 	if len(diffOrigin) > 0 {
-		retDiff[options.origin] = diffOrigin
+		retDiff[options.labelorigin] = diffOrigin
 		// log.Println("different", options.origin, flattenDnsEntrySlice(origin))
-		log.Println("different", options.origin, retDiff[options.origin])
+		log.Println("different", options.labelorigin, retDiff[options.labelorigin])
 	}
 	if len(diffDestination) > 0 {
-		retDiff[options.destination] = diffDestination
-		log.Println("different", options.destination, retDiff[options.destination])
+		retDiff[options.labeldestination] = diffDestination
+		log.Println("different", options.labeldestination, retDiff[options.labeldestination])
 	}
 
 	return retDiff
@@ -290,13 +292,13 @@ func logAndReport(status string,
 	case "found", "notfound":
 		{
 			log.Println(status, flattenDnsEntrySlice(entrySliceOrigin))
-			jzoneDiffSlice = append(jzoneDiffSlice, jzoneDiff{"status": status, options.origin: sliceStringOrigin})
+			jzoneDiffSlice = append(jzoneDiffSlice, jzoneDiff{"status": status, options.labelorigin: sliceStringOrigin})
 		}
 	case "different":
 		{
 			_jzoneDiff := jzoneDiff{"status": status,
-				options.origin:      sliceStringOrigin,
-				options.destination: sliceStringDestination}
+				options.labelorigin:      sliceStringOrigin,
+				options.labeldestination: sliceStringDestination}
 			if _, found := deep[strings.ToLower(curType)]; found || options.deepAll {
 				_differences := make(map[string][]string)
 				_repeats := make(map[string][]string)
@@ -307,23 +309,23 @@ func logAndReport(status string,
 				oriRepeats := findRepeat(originSlice)
 				destRepeats := findRepeat(destinationSlice)
 				if len(oriDestSlice) > 0 {
-					_differences[options.origin] = []string{removeTabs(entrySliceOrigin[0].Hdr.String()) + strings.Join(oriDestSlice, " ")}
-					log.Println(options.origin, status, removeTabs(entrySliceOrigin[0].Hdr.String())+strings.Join(oriDestSlice, " "))
+					_differences[options.labelorigin] = []string{removeTabs(entrySliceOrigin[0].Hdr.String()) + strings.Join(oriDestSlice, " ")}
+					log.Println(options.labelorigin, status, removeTabs(entrySliceOrigin[0].Hdr.String())+strings.Join(oriDestSlice, " "))
 				}
 				if len(destOriSlice) > 0 {
-					_differences[options.destination] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + strings.Join(destOriSlice, " ")}
-					log.Println(options.destination, status, removeTabs(entrySliceDestination[0].Hdr.String())+strings.Join(destOriSlice, " "))
+					_differences[options.labeldestination] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + strings.Join(destOriSlice, " ")}
+					log.Println(options.labeldestination, status, removeTabs(entrySliceDestination[0].Hdr.String())+strings.Join(destOriSlice, " "))
 				}
 				if len(_differences) > 0 {
 					_jzoneDiff["differences"] = _differences
 				}
 				if len(oriRepeats) > 0 {
-					_repeats[options.origin] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + oriRepeats}
-					log.Println(options.origin, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+oriRepeats)
+					_repeats[options.labelorigin] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + oriRepeats}
+					log.Println(options.labelorigin, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+oriRepeats)
 				}
 				if len(destRepeats) > 0 {
-					_repeats[options.destination] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + destRepeats}
-					log.Println(options.destination, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+destRepeats)
+					_repeats[options.labeldestination] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + destRepeats}
+					log.Println(options.labeldestination, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+destRepeats)
 				}
 				if len(_repeats) > 0 {
 					_jzoneDiff["repeats"] = _repeats
@@ -333,7 +335,7 @@ func logAndReport(status string,
 					// if they are the same, change it as found (or don't add it if found reporting is disabled)
 					if options.found && len(_repeats) == 0 {
 						_jzoneDiff["status"] = "found"
-						delete(_jzoneDiff, options.destination)
+						delete(_jzoneDiff, options.labeldestination)
 					} else if len(_repeats) == 0 {
 						_jzoneDiff = jzoneDiff{}
 					}
@@ -449,6 +451,18 @@ func main() {
 				Usage:       "domain to compare, default none",
 				Destination: &options.domain,
 			},
+			&cli.StringFlag{
+				Name:        "labelorigin",
+				Aliases:     []string{"lo"},
+				Usage:       "label of the origin zone, default origin filename|server:port",
+				Destination: &options.labelorigin,
+			},
+			&cli.StringFlag{
+				Name:        "labeldestination",
+				Aliases:     []string{"ld"},
+				Usage:       "label of the destination zone, default destination filename|server:port",
+				Destination: &options.labeldestination,
+			},
 			&cli.BoolFlag{
 				Name:        "showfound",
 				Aliases:     []string{"f"},
@@ -491,6 +505,12 @@ func main() {
 		Action: func(c *cli.Context) error {
 			options.origin = c.Args().Get(0)
 			options.destination = c.Args().Get(1)
+			if options.labelorigin == "" {
+				options.labelorigin = options.origin
+			}
+			if options.labeldestination == "" {
+				options.labeldestination = options.destination
+			}
 			options.ignore = c.StringSlice("ignore")
 			options.deep = c.StringSlice("deep")
 			if options.domain != "" {
