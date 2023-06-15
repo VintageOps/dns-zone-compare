@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"github.com/miekg/dns"
@@ -102,6 +103,26 @@ func toDNS(val reflect.Value, entry *dnsEntry) {
 	}
 }
 
+func checkIfOriginFirstLine(zoneFilePath string) bool {
+	fd, err := os.Open(zoneFilePath)
+	fatalOnErr(err)
+	defer func() {
+		err := fd.Close()
+		if err != nil {
+			fatalOnErr(err)
+		}
+	}()
+	scanner := bufio.NewScanner(fd)
+	for scanner.Scan() {
+		var line string = scanner.Text()
+		if strings.HasPrefix(line, "$ORIGIN") && strings.HasSuffix(line, ".") {
+			return true
+		}
+		break
+	}
+	return false
+}
+
 func loadMap(filename string, options opts) zoneMap {
 	var z *dns.ZoneParser
 	var fd *os.File
@@ -111,6 +132,10 @@ func loadMap(filename string, options opts) zoneMap {
 	zone := make(zoneMap)
 
 	if strings.Contains(filename, ":") {
+		if options.domain == "" {
+			fatalOnErr(fmt.Errorf("when using <address>:<port>, like with %s, "+
+				"you must specify a valid fully qualified domain options (e.g. example.com)", filename))
+		}
 		server := filename
 		transfer := new(dns.Transfer)
 		msg := new(dns.Msg)
@@ -128,6 +153,14 @@ func loadMap(filename string, options opts) zoneMap {
 			}
 		}
 	} else {
+		if options.domain == "" {
+			if !checkIfOriginFirstLine(filename) {
+				fatalOnErr(fmt.Errorf("no domain was specified and the provided zonefile %s does "+
+					"not have the first line defined with $ORIGIN and ending with a dot('.')\n"+
+					"Please either Specify a domain using domain parameters or make sure that $ORIGIN is defined in "+
+					"the zonefile (e.g. '$ORIGIN example.com.')", filename))
+			}
+		}
 		fd, err = os.Open(filename)
 		fatalOnErr(err)
 		defer func() {
