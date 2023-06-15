@@ -450,8 +450,15 @@ func main() {
 	// TODO: add json or text only outputs
 	options := opts{}
 	app := &cli.App{
-		Name:  "zonecompare",
-		Usage: "compare dns zones",
+		Name:      "zonecompare",
+		Usage:     "compare two dns zone files",
+		ArgsUsage: "<path_zonefile1>|<address|name:port> <path_zonefile2>|<address|name:port>",
+		Description: "zonecompare reads or transfer two DNS zone files and by default, output the differences.\n" +
+			"It can also output the similarities and has an extensive set of options to customize the comparison.\n" +
+			"The default output is a timestamped text highlighting the differences (or similarities with <--showfound>/<-f>),\n" +
+			"But with the appropriate <--json>/<-j> option, it can print the same in a comprehensive json format.\n" +
+			"The mandatory zonefiles argument can be specified either using their file path (e.g. tmp/zonefile1 tmp/zonefile2\n" +
+			"Or using <address|name>:<port> format (e.g. localhost:8053 192.168.0.1:53), in which case, for a DNS zone transfer(axfr)",
 		Flags: []cli.Flag{
 			&cli.BoolFlag{
 				Name:        "ignorettl",
@@ -531,7 +538,8 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			if c.NArg() == 0 {
+			if c.NArg() != 2 {
+				fmt.Printf("ERROR: Needs two arguments, the arguments being either the zonefiles path, or ip/name:<port>, %d provided.\n\n", c.NArg())
 				cli.ShowAppHelpAndExit(c, 1)
 			}
 			options.origin = c.Args().Get(0)
