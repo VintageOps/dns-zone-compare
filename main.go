@@ -118,6 +118,7 @@ func loadMap(filename string, options opts) zoneMap {
 
 		for x := range axfrChan {
 			for _, y := range x.RR {
+				y.Header().Rdlength = 0
 				rrSlice = append(rrSlice, y)
 			}
 		}
@@ -133,6 +134,7 @@ func loadMap(filename string, options opts) zoneMap {
 		z = dns.NewZoneParser(fd, options.domain, "")
 		fatalOnErr(z.Err())
 		for rr, ok := z.Next(); ok; rr, ok = z.Next() {
+			rr.Header().Rdlength = 0
 			rrSlice = append(rrSlice, rr)
 		}
 	}
@@ -329,7 +331,7 @@ func logAndReport(status string,
 				if len(destOriSlice) == 0 && len(oriDestSlice) == 0 {
 					// there's a repetition or the entries are "deeply" the same
 					// if they are the same, change it as found (or don't add it if found reporting is disabled)
-					if options.found || len(_repeats) == 0 {
+					if options.found && len(_repeats) == 0 {
 						_jzoneDiff["status"] = "found"
 						delete(_jzoneDiff, options.destination)
 					} else if len(_repeats) == 0 {
@@ -343,7 +345,7 @@ func logAndReport(status string,
 				// this happens when strict and the order is different
 				if len(diffEntries) > 0 {
 					_jzoneDiff["differences"] = diffEntries
-				} else {
+				} else if options.strict {
 					_jzoneDiff["differences"] = []string{"Wrong Order"}
 				}
 			}
@@ -491,6 +493,11 @@ func main() {
 			options.destination = c.Args().Get(1)
 			options.ignore = c.StringSlice("ignore")
 			options.deep = c.StringSlice("deep")
+			if options.domain != "" {
+				if !strings.HasSuffix(options.domain, ".") {
+					options.domain += "."
+				}
+			}
 			origin := loadMap(options.origin, options)
 			destination := loadMap(options.destination, options)
 			fmt.Println(zoneCompare(origin, destination, options))
