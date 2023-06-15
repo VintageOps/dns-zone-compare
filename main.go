@@ -531,6 +531,9 @@ func main() {
 			},
 		},
 		Action: func(c *cli.Context) error {
+			if c.NArg() == 0 {
+				cli.ShowAppHelpAndExit(c, 1)
+			}
 			options.origin = c.Args().Get(0)
 			options.destination = c.Args().Get(1)
 			options.countText = c.Count("text")
