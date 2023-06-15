@@ -24,6 +24,7 @@ type opts struct {
 	strict           bool
 	json             bool
 	text             bool
+	countText        int
 	destination      string
 	labelorigin      string
 	labeldestination string
@@ -191,7 +192,12 @@ func diffDnsSlices(x, y []dnsEntry) []string {
 }
 
 func logPrint(options opts, params ...interface{}) {
-	if options.text {
+	if options.json {
+		if options.countText >= 1 {
+			// Both json and Text specified
+			log.Println(params...)
+		}
+	} else {
 		log.Println(params...)
 	}
 }
@@ -519,14 +525,15 @@ func main() {
 			&cli.BoolFlag{
 				Name:        "text",
 				Aliases:     []string{"x"},
-				Usage:       "disable output in timestamped text",
+				Usage:       "Forcing addition timestamped text in output, useful only when used with --json to produce both json and text output",
 				Destination: &options.text,
+				Value:       false,
 			},
 		},
 		Action: func(c *cli.Context) error {
 			options.origin = c.Args().Get(0)
 			options.destination = c.Args().Get(1)
-			options.text = !options.text
+			options.countText = c.Count("text")
 			if options.labelorigin == "" {
 				options.labelorigin = options.origin
 			}
