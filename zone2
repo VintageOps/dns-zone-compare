@@ -16,40 +16,59 @@ $TTL 3600
         IN      A       192.0.2.1
         IN      AAAA    2001:db8::1
 
-        IN      TXT     "Welcome to Example.com"
         IN      SPF     "v=spf1 mx -all"
         IN      CAA     0 issue "letsencrypt.org"
+        IN      TXT     "Welcome to Example.com"
 
         IN      SRV     10 20 389 directory.example.com.
         IN      NAPTR   10 100 "u" "E2U+sip" "!^.*$!sip:customer-service@example.com!" .
 
+        IN      SSHFP   1 1 00AABBCCDDEE
+        IN      TLSA    3 0 1 2619A51299A120AC8D7B1A99D3A8106ECC578F6A7D65252B5B95F112FED4F1A5
+
+        IN      PTR     example.com.
+
+        IN      HINFO   "Linux" "x86_64"
+
+        IN      RP      hostmaster.example.com. admin.example.com.
+
+        IN      NSEC    www.example.com. A NS MX TXT AAAA SPF CAA SRV NAPTR SSHFP TLSA PTR HINFO RP NSEC RRSIG
+
 ns1     IN      A       192.0.2.2
 ns2     IN      A       192.0.2.3
+ns3     IN      A       192.0.2.4
 
 www     IN      CNAME   example.com.
 
-mail    IN      A       192.0.2.4
+mail    IN      A       192.0.2.10
 
-ftp     IN      CNAME   example.com.
+host1   IN      A       192.0.2.20
+        IN      A       192.0.2.21
+        IN      A       192.0.2.22
+        IN      A       192.0.2.23
+        IN      A       192.0.2.24
 
-subdomain   IN  A       192.0.2.5
+host2   IN      A       192.0.2.30
 
-subdomain2  IN  A       192.0.2.6
+; Additional A Records
+additional-a-1     IN      A       192.0.2.40
+additional-a-2     IN      A       192.0.2.41
+additional-a-3     IN      A       192.0.2.42
+additional-a-4     IN      A       192.0.2.43
+additional-a-5     IN      A       192.0.2.44
 
-subdomain3  IN  A       192.0.2.7
-            IN  TXT     "This is a text record for subdomain3"
+; Additional TXT Records
+additional-txt-1   IN      TXT     "Hello from Example.com"
+additional-txt-2   IN      TXT     "Additional text record for Example.com"
+additional-txt-3   IN      TXT     "This is an additional TXT record"
+additional-txt-4   IN      TXT     "Welcome to the new Example.com"
+additional-txt-5   IN      TXT     "TXT record for Example.com"
 
-subdomain4  IN  A       192.0.2.8
-            IN  MX      10      mail.subdomain4.example.com.
-            IN  MX      20      backup-mail.subdomain4.example.com.
+; New Records
+api     IN      A        192.0.2.50
+api     IN      AAAA     2001:db8::50
 
-mail.subdomain4   IN  A       192.0.2.9
-
-backup-mail.subdomain4   IN  A   192.0.2.10
-
-subdomain5  IN  NS      ns3.subdomain5.example.com.
-            IN  NS      ns4.subdomain5.example.com.
-
-ns3.subdomain5      IN  A       192.0.2.11
-ns4.subdomain5      IN  A       192.0.2.12
+; Modified Records
+mail    IN      AAAA     2001:db8::10
+host1   IN      TXT      "This is a modified TXT record for host1"
 

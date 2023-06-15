@@ -11,8 +11,28 @@ $TTL 3600
         IN      NS      ns2.example.com.
 
         IN      MX      10      mail.example.com.
+        IN      MX      20      backup-mail.example.com.
 
         IN      A       192.0.2.1
+        IN      AAAA    2001:db8::1
+
+        IN      SPF     "v=spf1 mx -all"
+        IN      CAA     0 issue "letsencrypt.org"
+        IN      TXT     "Example.com welcomes you"
+
+        IN      SRV     10 20 389 directory.example.com.
+        IN      NAPTR   10 100 "u" "E2U+sip" "!^.*$!sip:customer-service@example.com!" .
+
+        IN      SSHFP   1 1 00AABBCCDDEE
+        IN      TLSA    3 0 1 2619A51299A120AC8D7B1A99D3A8106ECC578F6A7D65252B5B95F112FED4F1A5
+
+        IN      PTR     example.com.
+
+        IN      HINFO   "Linux" "x86_64"
+
+        IN      RP      hostmaster.example.com. admin.example.com.
+
+        IN      NSEC    www.example.com. A NS MX TXT AAAA SPF CAA SRV NAPTR SSHFP TLSA PTR HINFO RP NSEC RRSIG
 
 ns1     IN      A       192.0.2.2
 ns2     IN      A       192.0.2.3
@@ -20,9 +40,26 @@ ns2     IN      A       192.0.2.3
 www     IN      CNAME   example.com.
 
 mail    IN      A       192.0.2.4
-mail    IN      A       192.0.2.6
-mail    IN      A       192.0.2.7
 
-ftp     IN      CNAME   example.com.
+host1   IN      A       192.0.2.10
+        IN      A       192.0.2.11
+        IN      A       192.0.2.12
+        IN      A       192.0.2.13
+        IN      A       192.0.2.14
 
-subdomain   IN  A       192.0.2.5
+; Additional A Records
+additional-a-1     IN      A       192.0.2.15
+additional-a-2     IN      A       192.0.2.16
+additional-a-3     IN      A       192.0.2.17
+additional-a-4     IN      A       192.0.2.18
+
+; Additional TXT Records
+additional-txt-1   IN      TXT     "Welcome to Example.com"
+additional-txt-1   IN      TXT     "Example.com TXT record"
+additional-txt-2   IN      TXT     "Additional text for Example.com"
+additional-txt-2   IN      TXT     "Another Example.com TXT record"
+additional-txt-3   IN      TXT     "This is an additional text record"
+additional-txt-3   IN      TXT     "Example.com additional record"
+additional-txt-4   IN      TXT     "Welcome to Example.com"
+additional-txt-4   IN      TXT     "Additional TXT record for Example.com"
+
