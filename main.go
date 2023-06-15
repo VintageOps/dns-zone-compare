@@ -22,6 +22,8 @@ type opts struct {
 	found            bool
 	notfound         bool
 	strict           bool
+	json             bool
+	text             bool
 	destination      string
 	labelorigin      string
 	labeldestination string
@@ -188,6 +190,12 @@ func diffDnsSlices(x, y []dnsEntry) []string {
 
 }
 
+func logPrint(options opts, params ...interface{}) {
+	if options.text {
+		log.Println(params...)
+	}
+}
+
 func diffDnsEntries(origin, destination []dnsEntry, options opts) map[string][]string {
 	retDiff := make(map[string][]string)
 	var diffOrigin, diffDestination []string
@@ -198,11 +206,11 @@ func diffDnsEntries(origin, destination []dnsEntry, options opts) map[string][]s
 	if len(diffOrigin) > 0 {
 		retDiff[options.labelorigin] = diffOrigin
 		// log.Println("different", options.origin, flattenDnsEntrySlice(origin))
-		log.Println("different", options.labelorigin, retDiff[options.labelorigin])
+		logPrint(options, options.labelorigin, "different", retDiff[options.labelorigin])
 	}
 	if len(diffDestination) > 0 {
 		retDiff[options.labeldestination] = diffDestination
-		log.Println("different", options.labeldestination, retDiff[options.labeldestination])
+		logPrint(options, options.labeldestination, "different", retDiff[options.labeldestination])
 	}
 
 	return retDiff
@@ -291,7 +299,7 @@ func logAndReport(status string,
 	switch status {
 	case "found", "notfound":
 		{
-			log.Println(status, flattenDnsEntrySlice(entrySliceOrigin))
+			logPrint(options, options.labelorigin, status, flattenDnsEntrySlice(entrySliceOrigin))
 			jzoneDiffSlice = append(jzoneDiffSlice, jzoneDiff{"status": status, options.labelorigin: sliceStringOrigin})
 		}
 	case "different":
@@ -310,22 +318,22 @@ func logAndReport(status string,
 				destRepeats := findRepeat(destinationSlice)
 				if len(oriDestSlice) > 0 {
 					_differences[options.labelorigin] = []string{removeTabs(entrySliceOrigin[0].Hdr.String()) + strings.Join(oriDestSlice, " ")}
-					log.Println(options.labelorigin, status, removeTabs(entrySliceOrigin[0].Hdr.String())+strings.Join(oriDestSlice, " "))
+					logPrint(options, options.labelorigin, status, removeTabs(entrySliceOrigin[0].Hdr.String())+strings.Join(oriDestSlice, " "))
 				}
 				if len(destOriSlice) > 0 {
 					_differences[options.labeldestination] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + strings.Join(destOriSlice, " ")}
-					log.Println(options.labeldestination, status, removeTabs(entrySliceDestination[0].Hdr.String())+strings.Join(destOriSlice, " "))
+					logPrint(options, options.labeldestination, status, removeTabs(entrySliceDestination[0].Hdr.String())+strings.Join(destOriSlice, " "))
 				}
 				if len(_differences) > 0 {
 					_jzoneDiff["differences"] = _differences
 				}
 				if len(oriRepeats) > 0 {
 					_repeats[options.labelorigin] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + oriRepeats}
-					log.Println(options.labelorigin, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+oriRepeats)
+					logPrint(options, options.labelorigin, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+oriRepeats)
 				}
 				if len(destRepeats) > 0 {
 					_repeats[options.labeldestination] = []string{removeTabs(entrySliceDestination[0].Hdr.String()) + destRepeats}
-					log.Println(options.labeldestination, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+destRepeats)
+					logPrint(options, options.labeldestination, "repeated", removeTabs(entrySliceDestination[0].Hdr.String())+destRepeats)
 				}
 				if len(_repeats) > 0 {
 					_jzoneDiff["repeats"] = _repeats
@@ -501,10 +509,24 @@ func main() {
 				Usage:       "Inspect all type records by merging, then splitting and sorting the content",
 				Destination: &options.deepAll,
 			},
+			&cli.BoolFlag{
+				Name:        "json",
+				Value:       false,
+				Aliases:     []string{"j"},
+				Usage:       "output in json format",
+				Destination: &options.json,
+			},
+			&cli.BoolFlag{
+				Name:        "text",
+				Aliases:     []string{"x"},
+				Usage:       "disable output in timestamped text",
+				Destination: &options.text,
+			},
 		},
 		Action: func(c *cli.Context) error {
 			options.origin = c.Args().Get(0)
 			options.destination = c.Args().Get(1)
+			options.text = !options.text
 			if options.labelorigin == "" {
 				options.labelorigin = options.origin
 			}
@@ -520,7 +542,10 @@ func main() {
 			}
 			origin := loadMap(options.origin, options)
 			destination := loadMap(options.destination, options)
-			fmt.Println(zoneCompare(origin, destination, options))
+			json_output := zoneCompare(origin, destination, options)
+			if options.json {
+				fmt.Println(json_output)
+			}
 			return cli.Exit("", 0)
 		},
 	}
