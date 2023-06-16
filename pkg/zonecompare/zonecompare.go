@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"github.com/VintageOps/dns-zone-compare/pkg/utils"
 	"github.com/miekg/dns"
 	"log"
 	"os"
@@ -78,12 +79,6 @@ type jzoneDiff map[string]interface{}
 */
 type rrMapJzone map[string]map[string][]jzoneDiff
 
-func fatalOnErr(err error) {
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-}
-
 func toDNS(val reflect.Value, entry *dnsEntry) {
 	for i := 0; i < val.NumField(); i++ {
 		field := val.Field(i)
@@ -104,11 +99,11 @@ func toDNS(val reflect.Value, entry *dnsEntry) {
 
 func checkIfOriginFirstLine(zoneFilePath string) bool {
 	fd, err := os.Open(zoneFilePath)
-	fatalOnErr(err)
+	utils.FatalOnErr(err)
 	defer func() {
 		err := fd.Close()
 		if err != nil {
-			fatalOnErr(err)
+			utils.FatalOnErr(err)
 		}
 	}()
 	scanner := bufio.NewScanner(fd)
@@ -132,7 +127,7 @@ func loadMap(filename string, options Opts) zoneMap {
 
 	if strings.Contains(filename, ":") {
 		if options.Domain == "" {
-			fatalOnErr(fmt.Errorf("when using <address>:<port>, like with %s, "+
+			utils.FatalOnErr(fmt.Errorf("when using <address>:<port>, like with %s, "+
 				"you must specify a valid fully qualified domain options (e.g. example.com)", filename))
 		} else {
 			if !strings.HasSuffix(options.Domain, ".") {
@@ -158,7 +153,7 @@ func loadMap(filename string, options Opts) zoneMap {
 	} else {
 		if options.Domain == "" {
 			if !checkIfOriginFirstLine(filename) {
-				fatalOnErr(fmt.Errorf("no domain was specified and the provided zonefile %s does "+
+				utils.FatalOnErr(fmt.Errorf("no domain was specified and the provided zonefile %s does "+
 					"not have the first line defined with $ORIGIN and ending with a dot('.')\n"+
 					"Please either Specify a domain using domain parameters or make sure that $ORIGIN is defined in "+
 					"the zonefile (e.g. '$ORIGIN example.com.')", filename))
@@ -169,7 +164,7 @@ func loadMap(filename string, options Opts) zoneMap {
 			}
 		}
 		fd, err = os.Open(filename)
-		fatalOnErr(err)
+		utils.FatalOnErr(err)
 		defer func() {
 			err := fd.Close()
 			if err != nil {
@@ -177,7 +172,7 @@ func loadMap(filename string, options Opts) zoneMap {
 			}
 		}()
 		z = dns.NewZoneParser(fd, options.Domain, "")
-		fatalOnErr(z.Err())
+		utils.FatalOnErr(z.Err())
 		for rr, ok := z.Next(); ok; rr, ok = z.Next() {
 			rr.Header().Rdlength = 0
 			rrSlice = append(rrSlice, rr)
@@ -483,7 +478,7 @@ func ZoneCompare(options Opts) string {
 		}
 	}
 	jzoneOutput, err := json.MarshalIndent(jreport, "", "  ")
-	fatalOnErr(err)
+	utils.FatalOnErr(err)
 	return string(jzoneOutput)
 
 }

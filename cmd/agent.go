@@ -2,35 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/VintageOps/dns-zone-compare/pkg/utils"
 	"github.com/VintageOps/dns-zone-compare/pkg/zonecompare"
 	"github.com/urfave/cli/v2"
-	"log"
 	"os"
 )
-
-type opts struct {
-	domain           string
-	origin           string
-	ignoreTTL        bool
-	ignore           []string
-	deep             []string
-	deepAll          bool
-	found            bool
-	notfound         bool
-	strict           bool
-	json             bool
-	text             bool
-	countText        int
-	destination      string
-	labelorigin      string
-	labeldestination string
-}
-
-func fatalOnErr(err error) {
-	if err != nil {
-		log.Fatalln(err.Error())
-	}
-}
 
 func Execute() {
 	// TODO: add json or text only outputs
@@ -141,13 +117,13 @@ func Execute() {
 			}
 			options.Ignore = c.StringSlice("ignore")
 			options.Deep = c.StringSlice("deep")
-			json_output := zonecompare.ZoneCompare(options)
+			jsonOutput := zonecompare.ZoneCompare(options)
 			if options.Json {
-				fmt.Println(json_output)
+				fmt.Println(jsonOutput)
 			}
 			return cli.Exit("", 0)
 		},
 	}
 	err := app.Run(os.Args)
-	fatalOnErr(err)
+	utils.FatalOnErr(err)
 }
