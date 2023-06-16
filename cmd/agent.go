@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	zonecompare "github.com/VintageOps/dns-zone-compare/zonecompare"
+	"github.com/VintageOps/dns-zone-compare/pkg/zonecompare"
 	"github.com/urfave/cli/v2"
 	"log"
 	"os"
