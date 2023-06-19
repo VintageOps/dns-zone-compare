@@ -1,4 +1,4 @@
-module github.com/VintageOps/dns-zone-compare
+module github.com/VintageOps/dns-zone-compare 
 
 go 1.20
 
