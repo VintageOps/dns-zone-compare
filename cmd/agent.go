@@ -22,13 +22,6 @@ func Execute() {
 			"The mandatory zonefiles argument can be specified either using their file path (e.g. tmp/zonefile1 tmp/zonefile2\n" +
 			"Or using <address|name>:<port> format (e.g. localhost:8053 192.168.0.1:53), in which case, for a DNS zone transfer(axfr)",
 		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:        "ignorettl",
-				Value:       false,
-				Aliases:     []string{"t"},
-				Usage:       "Force TTL value to 604800 in both zones",
-				Destination: &options.IgnoreTTL,
-			},
 			&cli.StringFlag{
 				Name: "domain",
 				Usage: "domain to compare (e.g. example.com)." +
@@ -36,17 +29,12 @@ func Execute() {
 					"and on zonefiles with no $ORIGIN",
 				Destination: &options.Domain,
 			},
-			&cli.StringFlag{
-				Name:        "labelorigin",
-				Aliases:     []string{"lo"},
-				Usage:       "label of the origin zone, default origin filename|server:port",
-				Destination: &options.Labelorigin,
-			},
-			&cli.StringFlag{
-				Name:        "labeldestination",
-				Aliases:     []string{"ld"},
-				Usage:       "label of the destination zone, default destination filename|server:port",
-				Destination: &options.Labeldestination,
+			&cli.BoolFlag{
+				Name:        "ignorettl",
+				Value:       false,
+				Aliases:     []string{"t"},
+				Usage:       "Force TTL value to 604800 in both zones",
+				Destination: &options.IgnoreTTL,
 			},
 			&cli.BoolFlag{
 				Name:        "showfound",
@@ -99,6 +87,18 @@ func Execute() {
 				Usage:       "Forcing timestamped text in output, useful only to produce both json and text output",
 				Destination: &options.Text,
 				Value:       false,
+			},
+			&cli.StringFlag{
+				Name:        "labelorigin",
+				Aliases:     []string{"lo"},
+				Usage:       "label of the origin zone, default origin filename|server:port",
+				Destination: &options.Labelorigin,
+			},
+			&cli.StringFlag{
+				Name:        "labeldestination",
+				Aliases:     []string{"ld"},
+				Usage:       "label of the destination zone, default destination filename|server:port",
+				Destination: &options.Labeldestination,
 			},
 		},
 		Action: func(c *cli.Context) error {
