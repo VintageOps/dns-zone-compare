@@ -50,6 +50,9 @@ host1   IN      A       192.0.2.20
 
 host2   IN      A       192.0.2.30
 
+host3   IN      A       192.0.2.50
+        IN      A       192.0.2.51
+
 ; Additional A Records
 additional-a-1     IN      A       192.0.2.40
 additional-a-2     IN      A       192.0.2.41
