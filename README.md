@@ -12,7 +12,7 @@ NAME:
    zonecompare - compare two dns zone files
 
 USAGE:
-   zonecompare [global options] command [command options] <path_zonefile1>|<address|name:port> <path_zonefile2>|<address|name:port>
+   zonecompare [options] <path_zonefile1>|<address|name:port> <path_zonefile2>|<address|name:port>
 
 DESCRIPTION:
    zonecompare reads or transfer two DNS zone files and by default, output the differences.
