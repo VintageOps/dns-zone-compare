@@ -12,9 +12,10 @@ func Execute() {
 	// TODO: add json or text only outputs
 	options := zonecompare.Opts{}
 	app := &cli.App{
-		Name:      "zonecompare",
-		Usage:     "compare two dns zone files",
-		ArgsUsage: "<path_zonefile1>|<address|name:port> <path_zonefile2>|<address|name:port>",
+		Name:            "zonecompare",
+		Usage:           "compare two dns zone files",
+		HideHelpCommand: true,
+		ArgsUsage:       "<path_zonefile1>|<address|name:port> <path_zonefile2>|<address|name:port>",
 		Description: "zonecompare reads or transfer two DNS zone files and by default, output the differences.\n" +
 			"It can also output the similarities and has an extensive set of options to customize the comparison.\n" +
 			"The default output is a timestamped text highlighting the differences (or similarities with <--showfound>/<-f>),\n" +
