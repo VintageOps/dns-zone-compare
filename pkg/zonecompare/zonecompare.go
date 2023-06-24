@@ -341,13 +341,19 @@ func logAndReport(status string,
 	case "found", "notfound":
 		{
 			logPrint(options, options.Labelorigin, status, flattenDnsEntrySlice(entrySliceOrigin))
-			jzoneDiffSlice = append(jzoneDiffSlice, jzoneDiff{"status": status, options.Labelorigin: sliceStringOrigin})
+			jzoneDiffSlice = append(jzoneDiffSlice,
+				jzoneDiff{
+					"status": status,
+					"originalRecords": map[string][]string{
+						options.Labelorigin: sliceStringOrigin}})
 		}
 	case "different":
 		{
 			_jzoneDiff := jzoneDiff{"status": status,
-				options.Labelorigin:      sliceStringOrigin,
-				options.Labeldestination: sliceStringDestination}
+				"originalRecords": map[string][]string{
+					options.Labelorigin:      sliceStringOrigin,
+					options.Labeldestination: sliceStringDestination},
+			}
 			if _, found := deep[strings.ToLower(curType)]; found || options.DeepAll {
 				_differences := make(map[string][]string)
 				_repeats := make(map[string][]string)
