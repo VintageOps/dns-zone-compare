@@ -65,4 +65,7 @@ additional-txt-3   IN      TXT     "This is an additional text record"
 additional-txt-3   IN      TXT     "Example.com additional record"
 additional-txt-4   IN      TXT     "Welcome to Example.com"
 additional-txt-4   IN      TXT     "Additional TXT record for Example.com"
+host1-cpus         IN      TXT     "cpu1 cpu2 cpu3"
+host1-cpus         IN      TXT     "cpu6 cpu4 cpu5"
+
 
