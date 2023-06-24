@@ -4,8 +4,33 @@ The tool was designed and implemented out of frustration of not being able to fi
 
 Below is a more thorough description of the tool and the different options, and detailed examples highlighting the tool's usage.
 
+# Installation
+
+You could either clone and build this locally as detailed on [Option 1](#Option-1:-Install-and-Use-Command-Line-with-git) below, or Build in a Go environment ([Option 2](#Option-2:-Install-by-building-with-Go-(in-Go-environment))), or simply make use of the Zonecompare package directly in your Go Code by importing the appropriate Library ([Option 3](#Option-3:-Import-zonecompare-library-in-your-Go-Code))
+
+## Option 1: Install and Use Command Line with git
+
+```bash
+$ git clone https://github.com/VintageOps/dns-zone-compare.git
+$ cd dns-zone-compare
+$ go build -o zonecompare
+```
+
+## Option 2: Install by building with Go (in Go environment)
+```bash
+$ go get -u github.com/VintageOps/dns-zone-compare
+```
+
+## Option 3: Import zonecompare library in your Go Code
+```go
+import "github.com/VintageOps/dns-zone-compare/pkg/zonecompare"
+```
+
+
 # Usage
 ---------
+
+## Command Line Usage
 
 ```
 NAME:
@@ -41,7 +66,35 @@ GLOBAL OPTIONS:
    --help, -h         
 ```
 
-# Detailed Documentation on its options
+## Importing as a Library
+```go
+// Import zonecompare
+import "github.com/VintageOps/dns-zone-compare/pkg/zonecompare"
+    ...
+
+// Set any of the appropriate Options
+// You can see examples in the example section of this README
+    options := zonecompare.Opts{
+    Domain:           string, //domain to compare (e.g. example.com).Required when arguments are <ip|name>:<port>, and on zonefiles with no $ORIGIN
+    Origin:           string, //First zonefiles|nameserver:port (the one we are comparing to Destination)
+    IgnoreTTL:        bool, //Force TTL value to 604800 in both zones (default: false)
+    Ignore:           []string, //Ignore <value> type records
+    Deep:             []string, //Inspect <value> type records by merging, then splitting and sorting the content
+    DeepAll:          bool, //Inspect all type records by merging, then splitting and sorting the content (default: false)
+    Found:            bool, //Report on found records (default: false)
+    Notfound:         bool, //Skip not found records (default: false)
+    Strict:           bool, //Consider the different order of the same record a difference (default: false)
+    Json:             bool, //output in json format (default: false)
+    Text:             bool, //Forcing timestamped text in output, useful only to produce both json and text output (default: false)
+    Destination:      string, //Second zonefiles|nameserver:port (the one we are comparing to Origin)
+    Labelorigin:      string, //label of the origin zone, default origin filename|server:port
+    Labeldestination: string, //label of the destination zone, default destination filename|server:port
+}
+// Call ZoneCompare
+zonecompare.ZoneCompare(options)
+```
+
+# Detailed Documentation on Options
 -----
 
 ## Example DNS Zonefiles
@@ -114,3 +167,106 @@ This option enables to skip the records not found on the output, and reports onl
 ---
 
 ### `--strict, -s`
+
+This option is for comparing the entries in strict order of appearances, for example, the host3 entries are the same, but with a different order.
+If we want to highlight the facts that the order is different, then we could add ``--strict``
+
+```bash
+ $ ./zonecompare --domain example.com --strict --json examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host3")))'
+{
+  "host3.example.com.": {
+    "A": [
+      {
+        "differences": [
+          "Wrong Order"
+        ],
+        "examples/zone1": [
+          "host3.example.com. 3600 IN A  192.0.2.51",
+          "host3.example.com. 3600 IN A  192.0.2.50"
+        ],
+        "examples/zone2": [
+          "host3.example.com. 3600 IN A  192.0.2.50",
+          "host3.example.com. 3600 IN A  192.0.2.51"
+        ],
+        "status": "different"
+      }
+    ]
+  }
+}
+```
+---
+
+### `--ignore value, -i value [ --ignore value, -i value ]`
+
+This option simply requests to ignore some value record type.
+As an example, if we want not to check/report on SOA difference, we could add `--ignore SOA`
+
+---
+
+### `--deep value, -d value [ --deep value, -d value ] `
+
+The deep enables to inspect <value> type records by merging, then splitting and sorting the content.
+It is a very useful options for records type like TXT, which may have been splitted on multiple RRs.
+
+As an example, considering the following two records on zonefiles we are comparing
+
+(zone1)
+```bash
+host1-cpus         IN      TXT     "cpu1 cpu2 cpu3"
+host1-cpus         IN      TXT     "cpu6 cpu4 cpu5"
+```
+
+(zone2)
+```bash
+host1-cpus         IN      TXT     "cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
+```
+
+The two contains the same information, but in a different order, without `--deep TXT`, these are reported different:
+
+```bash
+./zonecompare --domain example.com --json --showfound examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host1-cpu")))'
+{
+  "host1-cpus.example.com.": {
+    "TXT": [
+      {
+        "differences": {
+          "examples/zone1": [
+            "host1-cpus.example.com. 3600 IN TXT  cpu1 cpu2 cpu3",
+            "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu4 cpu5"
+          ],
+          "examples/zone2": [
+            "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
+          ]
+        },
+        "examples/zone1": [
+          "host1-cpus.example.com. 3600 IN TXT  cpu1 cpu2 cpu3",
+          "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu4 cpu5"
+        ],
+        "examples/zone2": [
+          "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
+        ],
+        "status": "different"
+      }
+    ]
+  }
+}
+```
+
+With `--deep TXT`, TXT records matching for the same entry, will be compared on their values, and this will match
+
+```bash
+./zonecompare --domain example.com --json --showfound --deep TXT examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host1-cpu")))'
+{
+  "host1-cpus.example.com.": {
+    "TXT": [
+      {
+        "examples/zone1": [
+          "host1-cpus.example.com. 3600 IN TXT  cpu1 cpu2 cpu3",
+          "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu4 cpu5"
+        ],
+        "status": "found"
+      }
+    ]
+  }
+}
+```
