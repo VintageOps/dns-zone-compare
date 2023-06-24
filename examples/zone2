@@ -66,6 +66,7 @@ additional-txt-2   IN      TXT     "Additional text record for Example.com"
 additional-txt-3   IN      TXT     "This is an additional TXT record"
 additional-txt-4   IN      TXT     "Welcome to the new Example.com"
 additional-txt-5   IN      TXT     "TXT record for Example.com"
+host1-cpus         IN      TXT     "cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
 
 ; New Records
 api     IN      A        192.0.2.50
