@@ -172,7 +172,7 @@ This option is for comparing the entries in strict order of appearances, for exa
 If we want to highlight the facts that the order is different, then we could add ``--strict``
 
 ```bash
- $ ./zonecompare --domain example.com --strict --json examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host3")))'
+$ ./zonecompare --domain example.com --strict --json examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host3")))'
 {
   "host3.example.com.": {
     "A": [
@@ -180,14 +180,16 @@ If we want to highlight the facts that the order is different, then we could add
         "differences": [
           "Wrong Order"
         ],
-        "examples/zone1": [
-          "host3.example.com. 3600 IN A  192.0.2.51",
-          "host3.example.com. 3600 IN A  192.0.2.50"
-        ],
-        "examples/zone2": [
-          "host3.example.com. 3600 IN A  192.0.2.50",
-          "host3.example.com. 3600 IN A  192.0.2.51"
-        ],
+        "originalRecords": {
+          "examples/zone1": [
+            "host3.example.com. 3600 IN A  192.0.2.51",
+            "host3.example.com. 3600 IN A  192.0.2.50"
+          ],
+          "examples/zone2": [
+            "host3.example.com. 3600 IN A  192.0.2.50",
+            "host3.example.com. 3600 IN A  192.0.2.51"
+          ]
+        },
         "status": "different"
       }
     ]
@@ -224,7 +226,7 @@ host1-cpus         IN      TXT     "cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
 The two contains the same information, but in a different order, without `--deep TXT`, these are reported different:
 
 ```bash
-./zonecompare --domain example.com --json --showfound examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host1-cpu")))'
+$ ./zonecompare --domain example.com --json --showfound examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host1-cpu")))'
 {
   "host1-cpus.example.com.": {
     "TXT": [
@@ -238,13 +240,15 @@ The two contains the same information, but in a different order, without `--deep
             "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
           ]
         },
-        "examples/zone1": [
-          "host1-cpus.example.com. 3600 IN TXT  cpu1 cpu2 cpu3",
-          "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu4 cpu5"
-        ],
-        "examples/zone2": [
-          "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
-        ],
+        "originalRecords": {
+          "examples/zone1": [
+            "host1-cpus.example.com. 3600 IN TXT  cpu1 cpu2 cpu3",
+            "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu4 cpu5"
+          ],
+          "examples/zone2": [
+            "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
+          ]
+        },
         "status": "different"
       }
     ]
@@ -255,18 +259,254 @@ The two contains the same information, but in a different order, without `--deep
 With `--deep TXT`, TXT records matching for the same entry, will be compared on their values, and this will match
 
 ```bash
-./zonecompare --domain example.com --json --showfound --deep TXT examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host1-cpu")))'
+$ ./zonecompare --domain example.com --json --showfound --deep TXT examples/zone1 examples/zone2 | jq '. | with_entries(select(.key | startswith("host1-cpu")))'
 {
   "host1-cpus.example.com.": {
     "TXT": [
       {
-        "examples/zone1": [
-          "host1-cpus.example.com. 3600 IN TXT  cpu1 cpu2 cpu3",
-          "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu4 cpu5"
-        ],
+        "originalRecords": {
+          "examples/zone1": [
+            "host1-cpus.example.com. 3600 IN TXT  cpu1 cpu2 cpu3",
+            "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu4 cpu5"
+          ],
+          "examples/zone2": [
+            "host1-cpus.example.com. 3600 IN TXT  cpu6 cpu5 cpu3 cpu4 cpu1 cpu2"
+          ]
+        },
         "status": "found"
       }
     ]
   }
 }
 ```
+
+---
+### `--deepAll, --da`
+
+The deepAll does the same as deep, but with all Record Type
+
+---
+### `--json, -j`
+
+This option return the output in a Json format , that could be used for any extra processing/reporting.
+The format of the json output is the following (Comments inline for more explanation):
+
+#### In case of records that have differences between the zones specified 
+```json
+	"<resource_record>": {              // The Resource record 
+	  "<record_type>": [                // The Record Type
+	    {
+	      "differences": {              // If Record is different
+	        "<label_zone>": [           // Where the difference is spotted (label)
+	          "<full_record(s)>",       // Which record(s) is different
+	        ]
+	      },
+          "originalRecords":{               // The Original records
+		    "<label_first_zone>": [
+			  "<full_record(s)>",
+		    ],
+		    "<label_first_zone>": [
+			  "<full_record(s)>",
+		    ]
+          },
+          "repeats": {                     // When using `--deep, -d`, if the information was repeated (see examples below) 
+            "<label_zone_repeated>": [
+              "<full_record(s)>"
+            ]
+          },
+          "status": "different",           // The Status (different)
+	    }
+	  ]
+	}
+```
+
+#### In case of records that are either not found or found (when using --showfound/-f)
+
+```json
+  "<resource_record>": {                // The Resource record
+    "<record_type>": [                  // The Record Type
+      {
+        "originalRecords": {            // The Original records on the first zone
+          "<label_first_zone>": [
+            "<full_record(s)>",
+          ]
+        },
+        "status": "notfound|found"      // The Status (notfound or found)
+      }
+    ]
+  },
+```
+
+As example, this is a sample output for two records that are different and one notfound from our examples zones
+
+```json
+  "host1.example.com.": {
+    "A": [
+      {
+        "differences": {
+          "examples/zone1": [
+            "host1.example.com. 3600 IN A  192.0.2.10",
+            "host1.example.com. 3600 IN A  192.0.2.11",
+            "host1.example.com. 3600 IN A  192.0.2.12",
+            "host1.example.com. 3600 IN A  192.0.2.13",
+            "host1.example.com. 3600 IN A  192.0.2.14"
+          ],
+          "examples/zone2": [
+            "host1.example.com. 3600 IN A  192.0.2.20",
+            "host1.example.com. 3600 IN A  192.0.2.21",
+            "host1.example.com. 3600 IN A  192.0.2.22",
+            "host1.example.com. 3600 IN A  192.0.2.23",
+            "host1.example.com. 3600 IN A  192.0.2.24"
+          ]
+        },
+        "originalRecords": {
+          "examples/zone1": [
+            "host1.example.com. 3600 IN A  192.0.2.10",
+            "host1.example.com. 3600 IN A  192.0.2.11",
+            "host1.example.com. 3600 IN A  192.0.2.12",
+            "host1.example.com. 3600 IN A  192.0.2.13",
+            "host1.example.com. 3600 IN A  192.0.2.14"
+          ],
+          "examples/zone2": [
+            "host1.example.com. 3600 IN A  192.0.2.20",
+            "host1.example.com. 3600 IN A  192.0.2.21",
+            "host1.example.com. 3600 IN A  192.0.2.22",
+            "host1.example.com. 3600 IN A  192.0.2.23",
+            "host1.example.com. 3600 IN A  192.0.2.24"
+          ]
+        },
+        "status": "different"
+      }
+    ]
+  },
+  "host7.example.com.": {
+    "A": [
+      {
+        "originalRecords": {
+          "examples/zone1": [
+            "host7.example.com. 3600 IN A  192.168.10.100"
+          ]
+        },
+        "status": "notfound"
+      }
+    ]
+  },
+  "host8.example.com.": {
+    "A": [
+      {
+        "originalRecords": {
+          "examples/zone1": [
+            "host8.example.com. 3600 IN A  192.168.10.100"
+          ]
+        },
+        "status": "notfound"
+      }
+    ]
+  },
+```
+
+---
+
+### `--text, -x`
+
+This option is used to forced the timestamped text in output, and is only useful when we want to produce both json and text output at the same time, as text only output is the default option.
+
+---
+
+### ```--labelorigin value, --lo value``` and ```--labeldestination value, --ld value```
+
+The default label on the output for the origin and target zonefile is the <filename|server:port> provided.
+This option enables us to modify and customized this at will, for all output types.
+
+For example, running the following without specifying a label, use the "example/zone1" and "example/zone2" as label
+
+#### - With no label (sample of both default and json output)
+```bash
+$ ./zonecompare --domain example.com examples/zone1 examples/zone2 
+2023/06/27 20:12:31 examples/zone1 different [additional-txt-2.example.com. 3600 IN TXT  Additional text for Example.com additional-txt-2.example.com. 3600 IN TXT  Another Example.com TXT record]
+2023/06/27 20:12:31 examples/zone2 different [additional-txt-2.example.com. 3600 IN TXT  Additional text record for Example.com]
+2023/06/27 20:12:31 examples/zone1 notfound host7.example.com. 3600 IN A  192.168.10.100
+2023/06/27 20:12:31 examples/zone1 different [additional-a-1.example.com. 3600 IN A  192.0.2.15]
+2023/06/27 20:12:31 examples/zone2 different [additional-a-1.example.com. 3600 IN A  192.0.2.40]
+2023/06/27 20:12:31 examples/zone1 different [additional-a-2.example.com. 3600 IN A  192.0.2.16]
+2023/06/27 20:12:31 examples/zone2 different [additional-a-2.example.com. 3600 IN A  192.0.2.41]
+...
+```
+
+```json
+$ ./zonecompare --domain example.com --json examples/zone1 examples/zone2
+{
+  "additional-a-1.example.com.": {
+    "A": [
+      {
+        "differences": {
+          "examples/zone1": [
+            "additional-a-1.example.com. 3600 IN A  192.0.2.15"
+          ],
+          "examples/zone2": [
+            "additional-a-1.example.com. 3600 IN A  192.0.2.40"
+          ]
+        },
+        "originalRecords": {
+          "examples/zone1": [
+            "additional-a-1.example.com. 3600 IN A  192.0.2.15"
+          ],
+          "examples/zone2": [
+            "additional-a-1.example.com. 3600 IN A  192.0.2.40"
+          ]
+        },
+        "status": "different"
+      }
+    ]
+  },
+...
+```
+
+#### - With Custom label (sample of both default and json output)
+
+```bash
+ ./zonecompare --domain example.com --labelorigin zone1Label --labeldestination zone2Label examples/zone1 examples/zone2  
+2023/06/27 20:16:41 zone1Label different [additional-txt-1.example.com. 3600 IN TXT  Example.com TXT record additional-txt-1.example.com. 3600 IN TXT  Welcome to Example.com]
+2023/06/27 20:16:41 zone2Label different [additional-txt-1.example.com. 3600 IN TXT  Hello from Example.com]
+2023/06/27 20:16:41 zone1Label different [mail.example.com. 3600 IN A  192.0.2.4]
+2023/06/27 20:16:41 zone2Label different [mail.example.com. 3600 IN A  192.0.2.10]
+2023/06/27 20:16:41 zone1Label different [additional-a-1.example.com. 3600 IN A  192.0.2.15]
+2023/06/27 20:16:41 zone2Label different [additional-a-1.example.com. 3600 IN A  192.0.2.40]
+2023/06/27 20:16:41 zone1Label different [additional-a-4.example.com. 3600 IN A  192.0.2.18]
+2023/06/27 20:16:41 zone2Label different [additional-a-4.example.com. 3600 IN A  192.0.2.43]
+```
+
+```json
+$ ./zonecompare --domain example.com --json --labelorigin zone1Label --labeldestination zone2Label examples/zone1 examples/zone2 
+{
+  "additional-a-1.example.com.": {
+    "A": [
+      {
+        "differences": {
+          "zone1Label": [
+            "additional-a-1.example.com. 3600 IN A  192.0.2.15"
+          ],
+          "zone2Label": [
+            "additional-a-1.example.com. 3600 IN A  192.0.2.40"
+          ]
+        },
+        "originalRecords": {
+          "zone1Label": [
+            "additional-a-1.example.com. 3600 IN A  192.0.2.15"
+          ],
+          "zone2Label": [
+            "additional-a-1.example.com. 3600 IN A  192.0.2.40"
+          ]
+        },
+        "status": "different"
+      }
+    ]
+  },
+```
+
+---
+
+# TODO:
+
+- Review deepAll
+- Unify json and text stream in one
