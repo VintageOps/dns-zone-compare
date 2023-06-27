@@ -76,3 +76,5 @@ api     IN      AAAA     2001:db8::50
 mail    IN      AAAA     2001:db8::10
 host1   IN      TXT      "This is a modified TXT record for host1"
 
+; Repeat Records
+host1-rams        IN      TXT    "8GB"
