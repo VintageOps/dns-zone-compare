@@ -68,4 +68,10 @@ additional-txt-4   IN      TXT     "Additional TXT record for Example.com"
 host1-cpus         IN      TXT     "cpu1 cpu2 cpu3"
 host1-cpus         IN      TXT     "cpu6 cpu4 cpu5"
 
+; Repeat cases
+host1-rams        IN      TXT    "8GB 8GB"
+
+; Not Found Records
+host7             IN       A      192.168.10.100
+host8             IN       A      192.168.10.100
 
