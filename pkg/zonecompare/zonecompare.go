@@ -52,15 +52,17 @@ type zoneMap map[string]map[string][]dnsEntry
 	          "mail.example.com. 3600 IN A  192.0.2.7"
 	        ]
 	      },
-	      "status": "different",
-	      "zone1": [
-	        "mail.example.com. 3600 IN A  192.0.2.4",
-	        "mail.example.com. 3600 IN A  192.0.2.6",
-	        "mail.example.com. 3600 IN A  192.0.2.7"
-	      ],
-	      "zone2": [
-	        "mail.example.com. 3600 IN A  192.0.2.4"
-	      ]
+          "originalRecords":{
+		    "zone1": [
+			  "mail.example.com. 3600 IN A  192.0.2.4",
+			  "mail.example.com. 3600 IN A  192.0.2.6",
+			  "mail.example.com. 3600 IN A  192.0.2.7"
+		    ],
+		    "zone2": [
+			  "mail.example.com. 3600 IN A  192.0.2.4"
+		    ]
+          },
+          "status": "different",
 	    }
 	  ]
 	}
