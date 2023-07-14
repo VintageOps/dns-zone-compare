@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 )
 
 type Opts struct {
@@ -137,7 +138,10 @@ func loadMap(filename string, options Opts) zoneMap {
 			}
 		}
 		server := filename
+		// TODO: make this timeout an option?
 		transfer := new(dns.Transfer)
+		transfer.ReadTimeout = time.Duration(10 * time.Second)
+
 		msg := new(dns.Msg)
 		msg.SetAxfr(options.Domain)
 
