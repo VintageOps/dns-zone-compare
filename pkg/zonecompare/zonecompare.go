@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"time"
 )
 
 type Opts struct {
@@ -137,7 +138,10 @@ func loadMap(filename string, options Opts) zoneMap {
 			}
 		}
 		server := filename
+		// TODO: make this timeout an option?
 		transfer := new(dns.Transfer)
+		transfer.ReadTimeout = time.Duration(10 * time.Second)
+
 		msg := new(dns.Msg)
 		msg.SetAxfr(options.Domain)
 
@@ -449,6 +453,7 @@ func logReport(jreport map[string]map[string][]jzoneDiff, reportType string, nam
 		log.Fatalln("We shouldn't reach this point")
 	}
 }
+
 func ZoneCompare(options Opts) rrMapJzone {
 	origin := loadMap(options.Origin, options)
 	destination := loadMap(options.Destination, options)
@@ -458,7 +463,9 @@ func ZoneCompare(options Opts) rrMapJzone {
 	for _, i := range options.Ignore {
 		ignore[strings.ToLower(i)] = struct{}{}
 	}
+
 	for name, dnsTypes := range origin {
+
 		for dnsType, _ := range dnsTypes {
 
 			if _, found := ignore[strings.ToLower(dnsType)]; found {

@@ -60,8 +60,7 @@ func TestZoneCompare(t *testing.T) {
 	}
 
 	if result != expectedOutput {
-		//t.Errorf("Test case 1 failed. Expected: %s, got: %s", expectedOutput, result)
-		t.Errorf("Test case 2 failed. Expected: %s, got: %s", expectedOutput, result)
+		t.Errorf("Test case 1 failed. Expected: %s, got: %s", expectedOutput, result)
 	}
 
 	// Test case 2: Another scenario
