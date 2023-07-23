@@ -511,5 +511,8 @@ $ ./zonecompare --domain example.com --json --labelorigin zone1Label --labeldest
 - Review deepAll
 - Unify json and text stream in one
 - Add Contextualization
+- Separate `zonecompare` according to SOLID and adjust function to receive test
+- Create file to store helper functions
+- Point Tests to run on CI
 - Go Documentation
 - Make loadZone Public
