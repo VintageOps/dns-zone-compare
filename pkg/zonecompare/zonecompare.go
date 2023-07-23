@@ -2,7 +2,6 @@ package zonecompare
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"github.com/VintageOps/dns-zone-compare/pkg/utils"
 	"github.com/miekg/dns"
@@ -24,6 +23,7 @@ type Opts struct {
 	Notfound         bool
 	Strict           bool
 	Json             bool
+	PrettyJSON       bool
 	Text             bool
 	CountText        int
 	Destination      string
@@ -449,7 +449,7 @@ func logReport(jreport map[string]map[string][]jzoneDiff, reportType string, nam
 		log.Fatalln("We shouldn't reach this point")
 	}
 }
-func ZoneCompare(options Opts) string {
+func ZoneCompare(options Opts) rrMapJzone {
 	origin := loadMap(options.Origin, options)
 	destination := loadMap(options.Destination, options)
 	var jreport = make(rrMapJzone)
@@ -485,8 +485,6 @@ func ZoneCompare(options Opts) string {
 			}
 		}
 	}
-	jzoneOutput, err := json.MarshalIndent(jreport, "", "  ")
-	utils.FatalOnErr(err)
-	return string(jzoneOutput)
+	return jreport
 
 }
