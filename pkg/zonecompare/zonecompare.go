@@ -453,6 +453,7 @@ func logReport(jreport map[string]map[string][]jzoneDiff, reportType string, nam
 		log.Fatalln("We shouldn't reach this point")
 	}
 }
+
 func ZoneCompare(options Opts) string {
 	origin := loadMap(options.Origin, options)
 	destination := loadMap(options.Destination, options)
@@ -462,7 +463,9 @@ func ZoneCompare(options Opts) string {
 	for _, i := range options.Ignore {
 		ignore[strings.ToLower(i)] = struct{}{}
 	}
+
 	for name, dnsTypes := range origin {
+
 		for dnsType, _ := range dnsTypes {
 
 			if _, found := ignore[strings.ToLower(dnsType)]; found {
@@ -489,7 +492,7 @@ func ZoneCompare(options Opts) string {
 			}
 		}
 	}
-	jzoneOutput, err := json.MarshalIndent(jreport, "", "  ")
+	jzoneOutput, err := json.Marshal(jreport)
 	utils.FatalOnErr(err)
 	return string(jzoneOutput)
 
