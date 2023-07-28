@@ -511,3 +511,5 @@ $ ./zonecompare --domain example.com --json --labelorigin zone1Label --labeldest
 - Review deepAll
 - Unify json and text stream in one
 - Add Contextualization
+- Go Documentation
+- Make loadZone Public
