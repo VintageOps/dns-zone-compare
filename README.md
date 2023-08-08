@@ -516,3 +516,4 @@ $ ./zonecompare --domain example.com --json --labelorigin zone1Label --labeldest
 - Separate `zonecompare` according to SOLID and adjust function to receive test
 - Create file to store helper functions
 - Point Tests to run on CI
+- Refactor logAndReport
