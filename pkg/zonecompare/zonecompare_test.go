@@ -60,25 +60,24 @@ func TestZoneCompare(t *testing.T) {
 	}
 
 	if result != expectedOutput {
-		//t.Errorf("Test case 1 failed. Expected: %s, got: %s", expectedOutput, result)
-		t.Errorf("Test case 1 failed. Expected:, got: %s", result)
+		t.Errorf("Test case 1 failed. Expected: %s, got: %s", expectedOutput, result)
 	}
 
-	//// Test case 2: Another scenario
-	//options = Opts{
-	//	Domain:      "mail.example.com",
-	//	Origin:      "../../examples/zone1",
-	//	Destination: "../../examples/zone2",
-	//	Ignore:      []string{"ignore3", "ignore4"},
-	//	Notfound:    true,
-	//	Strict:      false,
-	//	Found:       false,
-	//}
+	// Test case 2: Another scenario
+	options = Opts{
+		Domain:      "mail.example.com",
+		Origin:      "../../examples/zone1",
+		Destination: "../../examples/zone2",
+		Ignore:      []string{"ignore3", "ignore4"},
+		Notfound:    true,
+		Strict:      false,
+		Found:       false,
+	}
 
-	//result = ZoneCompare(options)
+	result = ZoneCompare(options)
 
-	//if result != expectedOutput {
-	//	t.Errorf("Test case 2 failed. Expected: %s, got: %s", expectedOutput, result)
-	//}
+	if result != expectedOutput {
+		t.Errorf("Test case 2 failed. Expected: %s, got: %s", expectedOutput, result)
+	}
 
 }
