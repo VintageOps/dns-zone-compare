@@ -513,3 +513,6 @@ $ ./zonecompare --domain example.com --json --labelorigin zone1Label --labeldest
 - Add Contextualization
 - Go Documentation
 - Make loadZone Public
+- Separate `zonecompare` according to SOLID and adjust function to receive test
+- Create file to store helper functions
+- Point Tests to run on CI
