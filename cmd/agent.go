@@ -1,11 +1,13 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
+
 	"github.com/VintageOps/dns-zone-compare/pkg/utils"
 	"github.com/VintageOps/dns-zone-compare/pkg/zonecompare"
 	"github.com/urfave/cli/v2"
-	"os"
 )
 
 func Execute() {
@@ -101,6 +103,12 @@ func Execute() {
 				Usage:       "label of the destination zone, default destination filename|server:port",
 				Destination: &options.Labeldestination,
 			},
+			&cli.BoolFlag{
+				Name:        "pretty-json",
+				Aliases:     []string{"pj"},
+				Usage:       "Print output in JSON human readable format, with identation.",
+				Destination: &options.PrettyJSON,
+			},
 		},
 		Action: func(c *cli.Context) error {
 			if c.NArg() != 2 {
@@ -118,9 +126,18 @@ func Execute() {
 			}
 			options.Ignore = c.StringSlice("ignore")
 			options.Deep = c.StringSlice("deep")
-			jsonOutput := zonecompare.ZoneCompare(options)
+			JSONOutput := zonecompare.ZoneCompare(options)
+			if options.PrettyJSON {
+				prettyJSONOutput, err := json.MarshalIndent(JSONOutput, "", "  ")
+				if err != nil {
+					fmt.Println("Error converting JSON: %s", err)
+				}
+				fmt.Println(string(prettyJSONOutput))
+			}
 			if options.Json {
-				fmt.Println(jsonOutput)
+				JSONMarshaledOutput, err := json.Marshal(JSONOutput)
+				utils.FatalOnErr(err)
+				fmt.Println(string(JSONMarshaledOutput))
 			}
 			return cli.Exit("", 0)
 		},
