@@ -3,14 +3,15 @@ package zonecompare
 import (
 	"bufio"
 	"fmt"
-	"github.com/VintageOps/dns-zone-compare/pkg/utils"
-	"github.com/miekg/dns"
 	"log"
 	"os"
 	"reflect"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/VintageOps/dns-zone-compare/pkg/utils"
+	"github.com/miekg/dns"
 )
 
 type Opts struct {
@@ -309,23 +310,6 @@ func sliceStringDiff(a, b []string) []string {
 		}
 	}
 	return diff
-}
-
-func findSliceRepeats(slice []string) string {
-	var output []string
-	var outputStr string
-	check := make(map[string]struct{})
-	for _, entry := range slice {
-		if _, found := check[entry]; !found {
-			check[entry] = struct{}{}
-		} else {
-			output = append(output, entry)
-		}
-	}
-	if len(output) > 0 {
-		outputStr = strings.Join(output, " ")
-	}
-	return outputStr
 }
 
 func logAndReport(status string,
