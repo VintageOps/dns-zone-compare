@@ -1,42 +1,10 @@
 package zonecompare
 
 import (
-	"encoding/json"
-	"io"
-	"log"
-	"os"
 	"reflect"
 	"testing"
 )
 
-func readFileIntoVariable(filename string) (string, error) {
-	var jreport = make(rrMapJzone)
-
-	file, err := os.Open(filename)
-	if err != nil {
-		log.Fatal(err)
-		return "", err
-	}
-	defer file.Close()
-
-	content, err := io.ReadAll(file)
-	if err != nil {
-		log.Fatal(err)
-		return "", err
-	}
-
-	err = json.Unmarshal([]byte(content), &jreport)
-	if err != nil {
-		log.Fatal("Error:", err)
-	}
-
-	jsonContent, err := json.Marshal(jreport)
-	if err != nil {
-		log.Fatal("Error:", err)
-	}
-
-	return string(jsonContent), nil
-}
 func Test_loadMap(t *testing.T) {
 	type args struct {
 		filename string
