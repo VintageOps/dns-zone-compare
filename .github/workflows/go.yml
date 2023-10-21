@@ -11,24 +11,18 @@ jobs:
     name: Lint 
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v4
-        with:
-          stable: false
-          go-version: 1.20.6
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
-        with:
-          version: v1.42.1
-
       - name: Get dependencies
         run: |
           go mod tidy
-
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v4
+        with:
+          stable: false
+          go-version: "1.21.3"
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.54
       - name: Format
         run: |
           if [[ $(gofmt -d . | wc -c) -ne 0 ]]; then
@@ -44,46 +38,21 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - name: Set up Go 1.x
+      - name: Set up Go 
         uses: actions/setup-go@v4
         with:
           stable: false
-          go-version: 1.20.6
-
+          go-version: 1.21.3
       - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
+        uses: actions/checkout@v3
       - name: Get dependencies
         run: |
           go mod download
           go mod tidy
-
       - name: Test 
         run: |
           go test -v ./...
-
       - name: Race Condition 
         run: |
           go test -race  ./...
 
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go 1.x
-        uses: actions/setup-go@v4
-        with:
-          stable: false
-          go-version: 1.20.6
-
-      - name: Check out code into the Go module directory
-        uses: actions/checkout@v2
-
-      - name: Get dependencies
-        run: |
-          go mod download
-          go mod tidy
-
-      - name: Build 
-        run:  |
-          go build -v ./...
