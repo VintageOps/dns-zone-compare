@@ -1,6 +1,6 @@
 module github.com/VintageOps/dns-zone-compare
 
-go 1.20
+go 1.21
 
 require (
 	github.com/miekg/dns v1.1.56
