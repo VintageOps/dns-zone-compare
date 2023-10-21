@@ -130,7 +130,7 @@ func Execute() {
 			if options.PrettyJSON {
 				prettyJSONOutput, err := json.MarshalIndent(JSONOutput, "", "  ")
 				if err != nil {
-					fmt.Println("Error converting JSON: %s", err)
+					fmt.Println("Error converting JSON:", err)
 				}
 				fmt.Println(string(prettyJSONOutput))
 			}
