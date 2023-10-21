@@ -1,0 +1,22 @@
+name: Build On Tag 
+
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Build
+        uses: hashicorp/actions-go-build@main
+        with:
+          go_version: 1.21.3
+          os: linux
+          arch: amd64
+          work_dir: testdata/example-app
+          debug: true
+          instructions: |
+           go build -o "$BIN_PATH" -trimpath -buildvcs=false
