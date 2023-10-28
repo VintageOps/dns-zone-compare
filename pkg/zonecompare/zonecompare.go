@@ -115,8 +115,10 @@ func checkIfOriginFirstLine(zoneFilePath string) bool {
 		var line string = scanner.Text()
 		if strings.HasPrefix(line, "$ORIGIN") && strings.HasSuffix(line, ".") {
 			return true
+		} else {
+			break
+			// XXX: This seems to be a `continue` instead of `break`
 		}
-		break
 	}
 	return false
 }
@@ -217,16 +219,16 @@ func removeTabs(str string) string {
 
 func diffDnsSlices(x, y []dnsEntry) []string {
 	var retDiff []string
-	for _, _x := range x {
+	for _, xKey := range x {
 		found := false
-		for _, _y := range y {
-			if _x.String() == _y.String() {
+		for _, yKey := range y {
+			if xKey.String() == yKey.String() {
 				found = true
 				break
 			}
 		}
 		if !found {
-			retDiff = append(retDiff, _x.String())
+			retDiff = append(retDiff, xKey.String())
 		}
 	}
 	return retDiff
@@ -450,7 +452,7 @@ func ZoneCompare(options Opts) rrMapJzone {
 
 	for name, dnsTypes := range origin {
 
-		for dnsType, _ := range dnsTypes {
+		for dnsType := range dnsTypes {
 
 			if _, found := ignore[strings.ToLower(dnsType)]; found {
 				continue
