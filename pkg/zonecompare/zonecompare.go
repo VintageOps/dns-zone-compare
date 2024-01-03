@@ -188,6 +188,10 @@ func loadMap(filename string, options Opts) zoneMap {
 		}
 	}
 
+	if len(rrSlice) == 0 {
+		log.Fatalf("%s: empty zone", filename)
+	}
+
 	for _, rr := range rrSlice {
 		var entry dnsEntry
 		val := reflect.ValueOf(rr).Elem()
